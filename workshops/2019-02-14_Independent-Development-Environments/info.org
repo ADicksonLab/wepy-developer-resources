@@ -21,14 +21,14 @@
 
 ** Project Table
 
-| project name | leader  | old gitlab branch | new repo location | test case | integrated |
-|--------------+---------+-------------------+-------------------+-----------+------------|
-|              | Tom     |                   |                   |           |            |
-|              | Arzu    |                   |                   |           |            |
-|              | Nicky   |                   |                   |           |            |
-|              | Alex    |                   |                   |           |            |
-|              | Nazanin |                   |                   |           |            |
-|              | Rob     |                   |                   |           |            |
+| project name | leader  | old gitlab branch | new repo location | test case | integrated | uniform inputs | tested |
+|--------------+---------+-------------------+-------------------+-----------+------------+----------------+--------|
+|              | Tom     |                   |                   |           |            |                |        |
+|              | Arzu    |                   |                   |           |            |                |        |
+|              | Nicky   |                   |                   |           |            |                |        |
+|              | Alex    |                   |                   |           |            |                |        |
+|              | Nazanin |                   |                   |           |            |                |        |
+|              | Rob     |                   |                   |           |            |                |        |
 
 
 ** Inputs for the example wepy simulation script
@@ -217,5 +217,5 @@ this:
 
   params = pmd.openmm.OpenMMParameterSet.from_parameterset(params)
 
-  params.write("mything.xml")
+  params.write("mything.ff.xml")
 #+END_SRC
