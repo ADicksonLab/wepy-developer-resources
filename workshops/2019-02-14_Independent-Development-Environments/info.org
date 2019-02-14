@@ -132,7 +132,7 @@ this.
 
   from wepy.util.mdtraj import mdtraj_to_json_topology
 
-  traj = mdj.load_pdb('my_system.pdb')
+  traj = mdj.load_pdb('seh-lig.pdb')
 
   json_str_top = mdtraj_to_json_topology(traj.top)
 #+END_SRC
@@ -142,7 +142,8 @@ You can then write out this JSON topology to a file to be used later.
 
 #+BEGIN_SRC python
   with open("my_system.top.json", 'w') as top_file:
-      top_file.write(json_str_top)
+      json_obj = json.loads(json_str_top)
+      json.dump(json_obj, top_file)
 #+END_SRC
 
 Where the naming convention for the file is separated by '.':
