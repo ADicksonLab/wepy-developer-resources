@@ -2,18 +2,18 @@
 
 ** Checklist
 
-- [ ] Project Identification
-  - [ ] projects
-  - [ ] branch
-  - [ ] delegate responsibility
+- [X] Project Identification
+  - [X] projects
+  - [X] branch
+  - [X] delegate responsibility
 
-- [ ] Repository creation
-  - [ ] gitlab repository
+- [X] Repository creation
+  - [X] gitlab repository
 
-- [ ] Set up developer environment
-  - [ ] virtual env
-  - [ ] minimal setup.py
-  - [ ] developer install `pip install -e .`
+- [X] Set up developer environment
+  - [X] virtual env
+  - [X] minimal setup.py
+  - [X] developer install `pip install -e .`
 
 - [ ] Testing and Integration
   - [ ] test script
@@ -21,21 +21,38 @@
 
 ** Project Table
 
-| project name | leader  | old gitlab branch | new repo location | test case | integrated | uniform inputs | tested |
-|--------------+---------+-------------------+-------------------+-----------+------------+----------------+--------|
-|              | Tom     |                   |                   |           |            |                |        |
-|              | Arzu    |                   |                   |           |            |                |        |
-|              | Nicky   |                   |                   |           |            |                |        |
-|              | Alex    |                   |                   |           |            |                |        |
-|              | Nazanin |                   |                   |           |            |                |        |
-|              | Rob     |                   |                   |           |            |                |        |
+| project name           | leader  | old gitlab branch | new repo location | 
+|------------------------+---------+-------------------+-------------------+
+| REVO-history-novelty   | Tom     | hitory_revo       | wepy_novelty      |
+| normal-distance-metric | Arzu    | normal_mode_v2    | wepy_tools        |
+| ion-channel            | Nicky   | ion-channel       | wepy              |
+| activity-resampler     | Alex    | action            | wepy_activity     |
+| Ani-runner             | Nazanin | Ani-Ase           | wepy_anakin-ase   |
+| alt-maps               | Rob     | robs file         | geomm.alt_maps    |
+| host-guest-bc          | Nazanin | Ani-Ase           | wepy_chemistry    |
+| mastic-inx-distance    | Alex    | mastic-history    | wepy_interactions |
+
+** Repo Table
+
+
+| repo                        | leader  | created? | projectified? | integrated | test case |
+|-----------------------------+---------+----------+---------------+------------+-----------|
+| wepy_novelty                | Tom     | yes      | yes           |            |           |
+| wepy_anakin-ase             | Nazanin | yes      | yes           |            |           |
+| wepy_activity               | Nicky   | yes      | yes           |            |           |
+| wepy_transport-systems      | Nicky   | yes      | yes           |            |           |
+| wepy_conformational-changes | Nicky   | yes      | yes           |            |           |
+| wepy_interactions           | Sam     | yes      | yes           |            |           |
+| wepy_chemistry              | Rob     | yes      | yes           |            |           |
+| wepy_tools                  | Arzu    | yes      | yes           |            |           |
+
 
 
 ** Inputs for the example wepy simulation script
 
-- [ ] initial state in pickle format
-- [ ] JSON topology format
-- [ ] OpenMM XML format forcefield files
+- initial state in pickle format
+- JSON topology format
+- OpenMM XML format forcefield files
 
 
 *** Initial State Pickle Format
