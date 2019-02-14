@@ -1,0 +1,16 @@
+* Wepy Developer Group
+
+This repo will serve as the central organizational place for
+organizing the development of wepy as an ecosystem, including the
+contributed modules.
+
+Specific discussion and issue tracking should be done in each repo.
+
+Decisions about:
+
+- merging between repos
+- deprecating repos
+- creating new repos
+- placing of new content by repo
+
+Will be done in the issues for this project.
