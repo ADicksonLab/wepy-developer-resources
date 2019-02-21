@@ -21,7 +21,8 @@ from wepy.work_mapper.mapper import WorkerMapper, Mapper
 
 # the runner for running dynamics and making and it's particular
 # state class
-from wepy.runners.openmm import OpenMMRunner, OpenMMState, OpenMMGPUWorker, UNIT_NAMES
+from wepy.runners.openmm import OpenMMRunner, OpenMMState, \
+    OpenMMGPUWorker, OpenMMCPUWorker, UNIT_NAMES
 from wepy.walker import Walker
 
 # reporters
@@ -45,15 +46,13 @@ from wepy.resampling.resamplers.wexplore import WExploreResampler
 # customize if desired
 
 # BEGIN CUSTOM -------------------------------------------------------
+# customizations for: WExplore, ligand Unbinding distance metric
 
 SAVE_FIELDS = ('positions', 'box_vectors')
 SPARSE_FIELDS = (('velocities', 10),)
 ALL_ATOMS_SAVE_FREQ = 10
 DEFAULT_N_WORKERS = 8
 N_WALKERS = 4
-
-PLATFORM = 'CPU' # Options: Reference, CPU, OpenCL, CUDA.
-
 
 # resampler and distance metric parameters
 MAX_N_REGIONS = (10, 10, 10, 10)
@@ -62,7 +61,7 @@ PMIN = 1e-12
 PMAX = 0.5
 
 # binding site cutoff
-CUTOFF = 0.8 # nm
+CUTOFF = 0.8 * unit.nanometer
 
 # constants for the supporting functions
 LIGAND_SEGID = 'HETA'
@@ -113,9 +112,13 @@ def binding_site_idxs(json_topology, coords, box_vectors, cutoff):
 
 # END CUSTOM --------------------------------------------------------
 
-# OTHERS , no need to customize
+# OTHERS, no need to customize
 UNITS = UNIT_NAMES
 INIT_WEIGHT = 1 / N_WALKERS
+
+
+# the number of threads per CPU worker to use
+N_CPU_THREADS = 1
 
 # MD System parameters
 
@@ -149,7 +152,8 @@ STEP_TIME = 0.002*unit.picoseconds
 
 
 def run_sim(init_state_path, json_top_path, forcefield_paths,
-            n_cycles, n_steps, n_workers,
+            n_cycles, n_steps,
+            platform, n_workers,
             lig_ff=None,
             **kwargs):
 
@@ -179,6 +183,7 @@ def run_sim(init_state_path, json_top_path, forcefield_paths,
     # we need to use the box vectors for setting the simulation up,
     # paying mind to the units
     box_vectors = init_state['box_vectors'] * init_state.box_vectors_unit
+    positions = init_state['positions'] * init_state.positions_unit
 
     # set the box to the last box size from equilibration
     omm_topology.setPeriodicBoxVectors(box_vectors)
@@ -208,7 +213,7 @@ def run_sim(init_state_path, json_top_path, forcefield_paths,
                                                STEP_TIME)
 
     ## Runner
-    runner = OpenMMRunner(runner_system, omm_topology, runner_integrator, platform=PLATFORM)
+    runner = OpenMMRunner(runner_system, omm_topology, runner_integrator, platform=platform)
 
     ## Resampler
 
@@ -216,8 +221,8 @@ def run_sim(init_state_path, json_top_path, forcefield_paths,
 
     lig_idxs = ligand_idxs(json_top_str)
     prot_idxs = protein_idxs(json_top_str)
-    bs_idxs = binding_site_idxs(json_top_str, init_state['positions'],
-                                init_state['box_vectors'],
+    bs_idxs = binding_site_idxs(json_top_str, positions,
+                                box_vectors,
                                 CUTOFF)
 
 
@@ -236,18 +241,14 @@ def run_sim(init_state_path, json_top_path, forcefield_paths,
     # optional: set the boundary conditions
     bc = None
 
-    # apparatus = WepySimApparatus(runner, resampler=resampler,
-    #                              boundary_conditions=bc)
-
-    print("created apparatus")
-
     ## CONFIGURATION
 
     # the idxs of the main representation to save in the output files,
     # it is just the protein and the ligand
 
-    # TODO optional: set the main representation atom indices
-    main_rep_idxs = None
+    # optional: set the main representation atom indices, set to None
+    # to save all the atoms in the 'positions' field
+    main_rep_idxs = np.concatenate((lig_idxs, prot_idxs))
 
 
     # REPORTERS
@@ -271,13 +272,21 @@ def run_sim(init_state_path, json_top_path, forcefield_paths,
     # collate the kwargs in the same order
     reporter_kwargs = [hdf5_reporter_kwargs,]
 
-    # make the configuration with all these reporters and the default number of workers
+    # make the configuration with all these reporters and the default
+    # number of workers. Don't be thrown off by this. You don't need
+    # this. It is just a convenient way to dynamically name the
+    # outputs of the reporters and parametrize the workers and worker
+    # mappers. This is mainly for use in the Orchestrator framework
+    # but it is useful here just for batch naming everything.
     configuration = Configuration(n_workers=DEFAULT_N_WORKERS,
                                   reporter_classes=reporter_classes,
                                   reporter_partial_kwargs=reporter_kwargs,
-                                  config_name="no-orch")
+                                  config_name="no-orch",
+                                  mode='w')
 
-    # then instantiate them
+    # then instantiate the reporters from the configuration. THis
+    # localizes the file paths to outputs and applies the key-word
+    # arguments specified above.
     reporters = configuration._gen_reporters()
 
     print("created configuration")
@@ -287,18 +296,22 @@ def run_sim(init_state_path, json_top_path, forcefield_paths,
 
     print("created init walkers")
 
-    ### Orchestrator
-    # orchestrator = Orchestrator(apparatus,
-    #                             default_init_walkers=init_walkers,
-    #                             default_configuration=configuration)
 
     ### Work Mapper
-    if PLATFORM in ('OpenCL', 'CUDA'):
+    if platform in ('OpenCL', 'CUDA'):
         # we use a mapper that uses GPUs
         work_mapper = WorkerMapper(worker_type=OpenMMGPUWorker,
                                    num_workers=n_workers)
-    if PLATFORM in ('Reference', 'CPU'):
-        # we just use the standard mapper
+
+    elif platform in ('CPU',):
+        # for the CPU we can choose how many threads to use per walker.
+        worker_attributes = {'num_threads' : N_CPU_THREADS}
+        work_mapper = WorkerMapper(worker_type=OpenMMCPUWorker,
+                                   worker_attributes=worker_attributes,
+                                   num_workers=n_workers)
+
+    elif platform in ('Reference',):
+        # we just use the standard mapper for in serial
         work_mapper = Mapper
 
     ### Simulation Manager
@@ -321,22 +334,25 @@ if __name__ == "__main__":
 
     init_state = osp.realpath(sys.argv[1])
     top_json_path = osp.realpath(sys.argv[2])
-    prot_ff = osp.realpath(sys.argv[4])
-    solvent_ff = osp.realpath(sys.argv[5])
-    n_cycles = int(sys.argv[8])
-    n_steps = int(sys.argv[9])
-    n_workers = int(sys.argv[10])
+    prot_ff = osp.realpath(sys.argv[3])
+    solvent_ff = osp.realpath(sys.argv[4])
+    n_cycles = int(sys.argv[5])
+    n_steps = int(sys.argv[6])
+    platform = str(sys.argv[7])
+    n_workers = int(sys.argv[8])
 
     # the rest of the domain specific kwargs are passed in at the end
-    keys = list(it.islice(sys.argv[11:], 2))
-    values = list(it.islice(sys.argv[12:], 2))
+    rest_args = sys.argv[9:]
+    keys = list(it.islice(rest_args, 0, len(rest_args), 2))
+    values = list(it.islice(rest_args, 1, len(rest_args), 2))
     assert len(keys) == len(values), "must be a value for every key"
 
     kwargs = {str(key) : str(value) for key, value in zip(keys, values)}
 
     run_sim(init_state, top_json_path,
             [prot_ff, solvent_ff],
-            n_cycles, n_steps, n_workers,
+            n_cycles, n_steps,
+            platform, n_workers,
             # domain specific kwargs
             **kwargs
     )

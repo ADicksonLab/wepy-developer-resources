@@ -1,0 +1,171 @@
+This was written on <2019-02-20 Wed> and is meant to reflect the state
+of things at that time. This may not be relevant in the future.
+
+* Running the example
+
+** Setting up the environment and installation
+
+As always you should make a new virtual env.
+
+#+BEGIN_SRC bash
+conda create -y -n wepy-test-example python=3
+conda activate wepy-test-example
+#+END_SRC
+
+We will manually install some of the trickier dependencies to get good
+versions of them. 
+
+Install numpy and other standard numerical libraries from conda-forge:
+
+#+BEGIN_SRC bash
+conda install -y -c conda-forge numpy h5py networkx=2 pandas dill scipy matplotlib mdtraj
+#+END_SRC
+
+You must install OpenMM this way whereas the others will get a version
+of them from PyPI if you don't get them from conda-forge. Recently I
+have found that you must also specify the ~--freeze-installed~ flag so
+that it doesn't try to install the outdated numpy from the default
+anaconda repos.
+
+#+BEGIN_SRC bash
+conda install --freeze-installed -y -c omnia openmm
+#+END_SRC
+
+Run the test to make sure it installed properly and that it is
+recognizing the desired platforms.
+
+#+BEGIN_SRC bash
+python -m simtk.testInstallation
+#+END_SRC
+
+
+Then install wepy. At the date of writing it is better just to
+install straight from the github repository as we are not very
+disciplined in making uild on PyPI available since it is still in
+alpha. We also manually install some of our other alpha libraries.
+
+#+BEGIN_SRC bash
+git clone git@github.com:ADicksonLab/geomm.git
+cd geomm
+pip install -e .
+#+END_SRC
+
+Do a rough test that it installed correctly.
+
+#+BEGIN_SRC bash
+python -c "from geomm.superimpose import superimpose"
+#+END_SRC
+
+
+#+BEGIN_SRC bash
+cd ..
+git clone git@github.com:ADicksonLab/wepy.git
+cd wepy
+pip install -e .
+#+END_SRC
+
+
+Test that the executable was installed for the orchestration CLI.
+
+#+BEGIN_SRC bash
+wepy --help
+#+END_SRC
+
+
+If not do what you need to do to get it on the path.
+
+
+** Running the test
+
+The actual run script is the file ~run.py~ and it requires a few
+command line arguments to run:
+
+- initial state pickle file path
+- json topology file path
+- protein XML force field file path
+- solvent XML force field file path
+- number of cycles of WE to run
+- number of steps in each cycle to run
+- the platform to use (Reference, CPU, OpenCL, CUDA)
+- the number of workers to use
+
+The ~run.sh~ "script" just gives an example filling it in with the
+inputs from the data dir.
+
+
+So run it if you have CUDA and a GPU installed.
+
+#+BEGIN_SRC bash
+bash run.sh
+#+END_SRC
+
+
+Otherwise run it using the CPU platform (which defaults to only 1
+thread per CPU worker).
+
+#+BEGIN_SRC bash
+python run.py data/init.state.pkl data/seh-lig.top.json \
+       data/charmm36.xml data/charmm36_solvent.xml \
+       2 5 \
+       CPU 4 \
+       lig_ff data/lig.xml
+#+END_SRC
+
+
+Don't worry if you see some warnings that look like this:
+
+#+BEGIN_EXAMPLE
+~/example/wepy/wepy/runners/openmm.py:654: UserWarning: Unknown exception handled from `self.sim_state.getEnergyParameterDerivatives()`, this is probably because this attribute is not in the State.
+  warn("Unknown exception handled from `self.sim_state.getEnergyParameterDerivatives()`, "
+#+END_EXAMPLE
+
+This just has to do with the ungraceful way in which we have to query
+an OpenMM datastructure. Unless you were expecting
+EnergyParameterDerivatives from your states this doesn't effect
+anything.
+
+** Results
+
+Analyzing the results goes far beyond the scope of this tutorial but
+there are some basic things you can do to see if you did produce data.
+
+The HDF5 toolset usually provides a tool ~h5ls~ for looking at data in
+an HDF5 file that you can use right from the command line.
+
+Try out these queries to get an idea of the data:
+
+#+BEGIN_SRC bash
+h5ls no-orch.wepy.h5/
+
+h5ls no-orch.wepy.h5/runs
+
+h5ls no-orch.wepy.h5/runs/0
+
+h5ls no-orch.wepy.h5/runs/0/trajectories
+
+h5ls -r no-orch.wepy.h5
+
+#+END_SRC
+
+
+
+You will probably want to use the python interface given by the
+~WepyHDF5~ and the ~ContigTree~ classes.
+
+Just as a taste:
+
+#+BEGIN_SRC bash
+pip install ipython
+#+END_SRC
+
+#+BEGIN_SRC python
+  from wepy.hdf5 import WepyHDF5
+
+  # make sure you open it in either 'r' or 'r+' or it will squash your
+  # existing file
+
+  wepy_h5 = WepyHDF5('no-orch.wepy.h5', mode='r')
+  wepy_h5.open()
+
+  print(wepy_h5.num_run_cycles(0))
+#+END_SRC
