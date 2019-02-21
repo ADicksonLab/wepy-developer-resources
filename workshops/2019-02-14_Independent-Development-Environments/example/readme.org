@@ -169,3 +169,195 @@ pip install ipython
 
   print(wepy_h5.num_run_cycles(0))
 #+END_SRC
+
+
+* Explanation
+** Inputs for the example wepy simulation script
+
+- initial state in pickle format
+- JSON topology format
+- OpenMM XML format forcefield files
+
+
+*** Initial State Pickle Format
+
+The initial state can be a 'State' object. In the most general sense
+this is really just a dictionary of values. In the practical sense we
+are going to be using the states from the Runner directly with
+bindings, making it a little trickier to bootstrap in.
+
+The easiest way to do this for OpenMM is to load up a simulation and
+then just extract the state from the context.
+
+Here is a code snippet of how to do this.
+
+The required things are an OpenMM Topology object, an OpenMM
+ForceField object (both described below), the parameters for your
+system and platform, and a numpy array of the positions (as a
+simtk.unit quantity, here we assume we know the units, nanometers, and
+just need the numpy array). All things that need to be predefined are
+in CAPs.
+
+Largely the parameters a won't be used considering no simulation will
+be run, but include them in full correctness just to be sure no
+unexpected behavior in th values of the initial state are introduced.
+
+#+BEGIN_SRC python
+  import pickle
+
+  import simtk.openmm.app as omma
+  import simtk.openmm as omm
+
+  from wepy.runners.openmm import OpenMMState
+
+  omm_system = FORCE_FIELD.createSystem(OMM_TOPOLOGY, **SYSTEM_PARAMS)
+
+  integrator = omm.LangevinIntegrator(START_TEMP, FRICTION_COEFFICIENT, STEP_TIME)
+
+  omm_sim = omma.Simulation(OMM_TOPOLOGY, omm_system, integrator, PLATFORM)
+
+  positions_quantity = POSITIONS * simtk.unit.nanometer
+
+  omm_sim.context.setPositions(positions_quantity)
+
+  omm_state = omm_sim.context.getState(getPositions=True,
+                                       getVelocities=True,
+                                       getForces=True,
+                                       getEnergy=True,
+                                       getParameterDerivatives=True)
+
+  wepy_state = OpenMMState(omm_state)
+
+  with open("init_state.state.pkl", 'wb') as state_file:
+      pickle.dump(wepy_state, state_file)
+#+END_SRC
+
+
+*** JSON topology format
+
+Current state of the art on topologies is a prickly subject and
+require some creative and attention to detail.
+
+WepyHDF5 currently utilizes a JSON format topology that was borrowed
+from the MDTraj HDF5 file. Wepy includes a few things for dealing with
+these formats directly that MDTraj does not (they are hidden in
+mdtraj).
+
+You are advised to *NOT* use the topology manipulating methods from
+MDTraj as they often time have unexpected behavior. Instead use the
+methods you find in the ~wepy.util~ modules.
+
+For extremly small and contrived test systems, you can simply write
+the topologies yourself.
+
+This is how I did it for the Lennard-Jones particles and how it was
+done for the N-Dimensional random walk particles.
+
+For molecular structures you will need to load them from some legacy
+topology format file.
+
+This I will leave to you as different system generating programs
+produce different kinds of files.
+
+Currently, there are methods to convert back and forth between the
+JSON format and an in-memory ~Topology~ object from MDTraj.
+
+So if you can get an ~mdtraj.Topology~ object, you can get a JSON
+topology.
+
+Here is an example where we load up a well-formed PDB to accomplish
+this.
+
+#+BEGIN_SRC python
+  import mdtraj as mdj
+
+  from wepy.util.mdtraj import mdtraj_to_json_topology
+
+  traj = mdj.load_pdb('seh-lig.pdb')
+
+  json_str_top = mdtraj_to_json_topology(traj.top)
+#+END_SRC
+
+
+You can then write out this JSON topology to a file to be used later.
+
+#+BEGIN_SRC python
+  with open("my_system.top.json", 'w') as top_file:
+      json_obj = json.loads(json_str_top)
+      json.dump(json_obj, top_file)
+#+END_SRC
+
+Where the naming convention for the file is separated by '.':
+
+- the explanation of the contents
+- the schema for the contents (in this case I chose 'top')
+- the file format ('json')
+
+You of course can name it whatever you want if you really want to and
+this is in no way recognized by anything in wepy.
+
+
+Additionally just to make this a little less mysterious you can
+transform that JSON string into python collections:
+
+#+BEGIN_SRC python
+  import json
+
+  json_top = json.loads(json_str_top)
+
+  # the first residue
+  print(json_top['chains'][0]['residues'][0])
+#+END_SRC
+
+
+It is also worth noting that in the example script when you need to
+generate an OpenMM topology you go through MDTraj (as of now to do
+so).
+
+#+BEGIN_SRC python
+  from wepy.util.mdtraj import json_to_mdtraj_topology
+
+  mdj_top = json_to_mdtraj_topology(json_str_top)
+
+  omm_topology = mdj_top.to_openmm()
+#+END_SRC
+
+*** OpenMM XML ForceField files
+
+These are a special format of files that specify the forcefields that
+are used in OpenMM. Any other forcefield can be represented in
+them. And the newer versions of OpenMM have most of them already
+converted. This includes the charmm forcefields which wasn't true a
+year ago.
+
+So use them. If you don't and rely on loading forcefields using the
+other facilities OpenMM gives you to construct systems such as
+~CharmmParameterSet~ or ~CharmmPsfFile~, beware. These objects are not
+compatible with the OpenMM ~ForceField~ object. Furthermore, they
+conflate force fields with toplogies making things seem much more
+complex than they really are.
+
+As a practice in the tutorials and examples we will always make
+~ForceField~ objects to create our systems.
+
+From past experiencec the only trouble with making XML forcefields is
+converting special forcefields like CGENFF to this format.
+
+Luckily it was discovered that hte outputs from CGENFF can be
+converted to the XML format using the ParmEd library.
+
+So if you have CHARMM RTF and PRM files you can convert them like
+this:
+
+#+BEGIN_SRC python
+  import parmed as pmd
+
+  rtf_file_path = 'mything.rtf'
+  prm_file_path = 'mything.prm'
+
+  thing_params = pmd.charmm.CharmmParameterSet(rtf_file_path, prm_file_path)
+
+  params = pmd.openmm.OpenMMParameterSet.from_parameterset(params)
+
+  params.write("mything.ff.xml")
+#+END_SRC
