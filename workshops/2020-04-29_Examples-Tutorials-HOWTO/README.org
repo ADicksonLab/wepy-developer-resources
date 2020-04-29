@@ -1,0 +1,247 @@
+* Itinerary
+
+- Tour of website & docs
+- How to run examples
+- How to make your own examples
+- How to test your examples
+
+
+* Docs Tour
+
+Github:
+https://github.com/ADicksonLab/wepy
+
+Docs web page:
+https://adicksonlab.github.io/wepy/index.html
+
+Plain-Old Org mode docs:
+https://github.com/ADicksonLab/wepy/blob/master/info/README.org
+
+* Getting Set Up
+
+Clone the repo:
+
+#+begin_src bash
+cd ~/scratch/
+git clone https://github.com/ADicksonLab/wepy.git
+#+end_src
+
+Instructions:
+https://adicksonlab.github.io/wepy/_source/users_guide.html#running-examples-tutorials
+
+Lennar Jones Pair:
+https://github.com/ADicksonLab/wepy/tree/master/info/examples/Lennard_Jones_Pair
+
+Go to this directory:
+
+#+begin_src bash
+cd info/examples/Lennard_Jones_Pair
+ls
+#+end_src
+
+* Manual Virtualenv
+
+Make a virtualenv the manual way. You all should know how to do this:
+
+#+begin_src bash
+conda create -n wepy-example-tutorial python=3.7
+#+end_src
+
+Then you activate the environment:
+
+#+begin_src bash
+which python
+conda activate wepy-example-tutorial
+which python
+#+end_src
+
+Each example/tutorial has its own specification of dependencies. That
+way it will always work as long as we install exactly these
+packages. This is also what it is tested with.
+
+#+begin_src bash
+ls env
+#+end_src
+
+* Pinned vs unpinned
+
+for ~pip~:
+
+#+begin_src bash
+cat env/requirements.txt
+cat env/requirements.in
+#+end_src
+
+for ~conda~:
+
+#+begin_src bash
+cat env/env.pinned.yaml
+cat env/env.yaml
+#+end_src
+
+* Install pinned dependencies
+
+#+begin_src bash
+pip install -r env/requirements.txt
+conda env update --file env/env.pinned.yaml
+# install wepy itself in editable mode
+pip install -e ../../../
+#+end_src
+
+While thats running....
+
+https://github.com/ADicksonLab/wepy/tree/master/info/examples/Lennard_Jones_Pair
+
+
+* Running Examples
+
+From the [[https://github.com/ADicksonLab/wepy/blob/master/info/examples/Lennard_Jones_Pair/README.org][README]]:
+
+#+begin_src bash
+python source/we.py 10 100 10
+#+end_src
+
+Check the results:
+
+#+begin_src bash
+ls _output/we_
+#+end_src
+
+* Automagic virtualenv
+
+You should know how to do everything we just did! And do it for all your projects. I also use these things to make things automagic.
+
+#+begin_src bash
+cat tasks.py
+#+end_src
+
+New env (the answer to most problems):
+
+#+begin_src bash
+conda deactivate
+which python
+conda create -n empty python=3.7
+conda activate empty
+which python
+#+end_src
+
+Install ~invoke~:
+
+#+begin_src bash
+
+pip install invoke
+inv -l
+inv env
+#+end_src
+
+May take a while, just automatically does what we did above. YMMV
+
+* Making your own examples
+
+Full instructions with "automagic" helpers explained:
+https://adicksonlab.github.io/wepy/_source/dev_guide.html#documentation-and-website
+
+Make the directory:
+
+#+begin_src bash
+cd ..
+ls
+# template for example
+cp -r ../../templates/examples/org ./My_Example
+# template for env specification
+cp -r ../../templates/env/conda_blank My_Example/env
+cd My_Example
+#+end_src
+
+* Writing the example
+
+Writing ~source~ files:
+
+#+begin_src bash
+emacs source/wepy_example.py
+#+end_src
+
+#+begin_src python
+  import os
+
+  import mdtraj as mdj
+
+  traj = mdj.load_pdb("input/top.pdb")
+
+  os.makedirs("_output",
+              exist_okay=True)
+
+  traj.save_dcd("_output/lig.dcd")
+#+end_src
+
+Copy the ~top.pdb~ file to the ~input~ folder.
+
+* Adding dependencies
+
+You need to add ~mdtraj~ as a dependency.
+
+Heres the bureacratic part. This discipline will help with your projects though too.
+
+#+begin_src bash
+emacs env/requirements.in
+#+end_src
+
+#+begin_src fundamental
+mdtraj
+#+end_src
+
+For now we just can install from this file. We will pin when we are done.
+
+#+begin_src bash
+which python
+conda create --prefix ./_env python=3.7
+conda activate ./_env
+which python
+conda list
+pip install -r env/requirements.in
+conda list
+#+end_src
+
+* Running your example
+
+You should be able to run it now:
+
+#+begin_src bash
+ls
+python source/wepy_example.py
+ls _output/we
+python source/wepy_example.py
+ls _output/we.py
+#+end_src
+
+Hurray!
+
+
+* Pinning the dependencies
+
+We are only doing ~pip~ dependencies for this example. You will need this tool:
+
+#+begin_src bash
+pip install pip-tools
+pip-compile env/requirements.in > env/requirements.txt
+ls env
+#+end_src
+
+Now you can install the exact dependencies before running/testing examples:
+
+#+begin_src bash
+pip install -r env/requirements.txt
+#+end_src
+
+* Testing your example
+
+For next time!
+
+This last part is only for if you want to include examples in the documentation.
+
+I was tired of not knowing whether the examples work or not and what environments they need etc. which is why all this stuff exists.
+
+The last part is to test to make sure it works! We already know it works because we just ran it.
+
+This needs to be automated or checks between versions won't happen.
+
