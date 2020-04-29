@@ -9,13 +9,13 @@
 * Docs Tour
 
 Github:
-https://github.com/ADicksonLab/wepy
+[[https://github.com/ADicksonLab/wepy]]
 
 Docs web page:
-https://adicksonlab.github.io/wepy/index.html
+[[https://adicksonlab.github.io/wepy/index.html]]
 
 Plain-Old Org mode docs:
-https://github.com/ADicksonLab/wepy/blob/master/info/README.org
+[[https://github.com/ADicksonLab/wepy/blob/master/info/README.org]]
 
 * Getting Set Up
 
@@ -104,7 +104,7 @@ python source/we.py 10 100 10
 Check the results:
 
 #+begin_src bash
-ls _output/we_
+ls _output/we
 #+end_src
 
 * Automagic virtualenv
@@ -174,7 +174,7 @@ emacs source/wepy_example.py
   traj.save_dcd("_output/lig.dcd")
 #+end_src
 
-Copy the ~top.pdb~ file to the ~input~ folder.
+Copy the [[https://gitlab.com/ADicksonLab/wepy-developer-resources/-/blob/master/workshops/2020-04-29_Examples-Tutorials-HOWTO/inputs/top.pdb][top.pdb]] file to the ~input~ folder.
 
 * Adding dependencies
 
