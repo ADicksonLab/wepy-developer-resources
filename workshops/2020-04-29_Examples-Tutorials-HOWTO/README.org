@@ -165,11 +165,14 @@ emacs source/wepy_example.py
 
 #+begin_src python
   import os
+  import shutil
 
   import mdtraj as mdj
 
   traj = mdj.load_pdb("input/top.pdb")
 
+  # clean up
+  shutil.rmtree("_ouput")
   os.makedirs("_output",
               exist_okay=True)
 
