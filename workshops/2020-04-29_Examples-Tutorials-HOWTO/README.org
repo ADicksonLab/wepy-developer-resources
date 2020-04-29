@@ -5,6 +5,8 @@
 - How to make your own examples
 - How to test your examples
 
+- [ ] fire up your terminals & text editor
+
 
 * Docs Tour
 
@@ -27,10 +29,10 @@ git clone https://github.com/ADicksonLab/wepy.git
 #+end_src
 
 Instructions:
-https://adicksonlab.github.io/wepy/_source/users_guide.html#running-examples-tutorials
+[[https://adicksonlab.github.io/wepy/_source/users_guide.html#running-examples-tutorials]]
 
-Lennar Jones Pair:
-https://github.com/ADicksonLab/wepy/tree/master/info/examples/Lennard_Jones_Pair
+Lennard Jones Pair:
+[[https://github.com/ADicksonLab/wepy/tree/master/info/examples/Lennard_Jones_Pair]]
 
 Go to this directory:
 
@@ -90,7 +92,7 @@ pip install -e ../../../
 
 While thats running....
 
-https://github.com/ADicksonLab/wepy/tree/master/info/examples/Lennard_Jones_Pair
+[[https://github.com/ADicksonLab/wepy/tree/master/info/examples/Lennard_Jones_Pair]]
 
 
 * Running Examples
@@ -139,7 +141,7 @@ May take a while, just automatically does what we did above. YMMV
 * Making your own examples
 
 Full instructions with "automagic" helpers explained:
-https://adicksonlab.github.io/wepy/_source/dev_guide.html#documentation-and-website
+[[https://adicksonlab.github.io/wepy/_source/dev_guide.html#documentation-and-website]]
 
 Make the directory:
 
