@@ -5,7 +5,7 @@
 - How to make your own examples
 - How to test your examples
 
-- [ ] fire up your terminals & text editor
+- [X] fire up your terminals & text editor
 
 
 * Docs Tour
@@ -84,8 +84,8 @@ cat env/env.yaml
 * Install pinned dependencies
 
 #+begin_src bash
+conda env update --file env/env.yaml
 pip install -r env/requirements.txt
-conda env update --file env/env.pinned.yaml
 # install wepy itself in editable mode
 pip install -e ../../../
 #+end_src
@@ -151,7 +151,7 @@ ls
 # template for example
 cp -r ../../templates/examples/org ./My_Example
 # template for env specification
-cp -r ../../templates/env/conda_blank My_Example/env
+cp -r ../../templates/envs/conda_blank My_Example/env
 cd My_Example
 #+end_src
 
@@ -172,9 +172,8 @@ emacs source/wepy_example.py
   traj = mdj.load_pdb("input/top.pdb")
 
   # clean up
-  shutil.rmtree("_ouput")
-  os.makedirs("_output",
-              exist_okay=True)
+  shutil.rmtree("_output")
+  os.makedirs("_output")
 
   traj.save_dcd("_output/lig.dcd")
 #+end_src
@@ -237,16 +236,4 @@ Now you can install the exact dependencies before running/testing examples:
 #+begin_src bash
 pip install -r env/requirements.txt
 #+end_src
-
-* Testing your example
-
-For next time!
-
-This last part is only for if you want to include examples in the documentation.
-
-I was tired of not knowing whether the examples work or not and what environments they need etc. which is why all this stuff exists.
-
-The last part is to test to make sure it works! We already know it works because we just ran it.
-
-This needs to be automated or checks between versions won't happen.
 

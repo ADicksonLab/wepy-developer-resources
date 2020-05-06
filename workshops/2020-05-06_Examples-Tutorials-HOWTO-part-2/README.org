@@ -1,0 +1,211 @@
+* Testing your example
+
+This last part is only for if you want to include examples in the
+documentation.
+
+I was tired of not knowing whether the examples work or not and what
+environments they need etc. which is why all this stuff exists.
+
+The last part is to test to make sure it works! We already know it
+works because we just ran it.
+
+This needs to be automated or checks between versions won't happen.
+
+* Checklist from before
+
+- [ ] ~info/examples/My_Example~ folder
+- [ ] the ~source/wepy_example.py~ example is there
+- [ ] ~_env~ env is created and can be activated
+
+Go there and activate the environment:
+
+#+begin_src bash
+cd info/examples/My_Example
+conda activate ./_env
+#+end_src
+
+* Getting Set Up
+
+There are helpers for all this, but we do it manually first.
+
+Go to the root of the project
+
+#+begin_src bash
+cd ../../../
+#+end_src
+
+You will need to install the testing tools.
+
+#+begin_src bash
+conda install -c omnia openmm
+pip install openmm_systems
+pip install -r envs/dev/requirements.in
+pip install .[all]
+#+end_src
+
+Test out that you can run tests at all. This runs the tests for the
+Lennard Jones Pair example:
+
+#+begin_src bash
+pytest tests/test_docs/test_examples/test_Lennard_Jones_Pair.py
+#+end_src
+
+It should fail.
+
+
+* Running Tests for Example Docs
+
+You need to *tangle* the examples first. Use the "script" for
+this. You need a non-ancient emacs for this.
+
+#+begin_src bash
+ls tests/test_docs
+
+inv docs.tangle
+
+ls tests/test_docs
+#+end_src
+
+Should see a bunch of extra folders 🖒
+
+Rerun test:
+
+#+begin_src bash
+pytest tests/test_docs/test_examples/test_Lennard_Jones_Pair.py
+#+end_src
+
+Should see some FAILED PASSED things.
+
+* How to write tests
+
+Look at the test suite file:
+
+#+begin_src bash
+emacs tests/test_docs/test_examples/test_Lennard_Jones_Pair.py
+#+end_src
+
+Can use anything pytest does (which is a lot).
+
+Functions starting with ~test_~ are run by pytest.
+
+But what is the bare minimum?
+
+Just check:
+
+- scripts run without failure in the intended sequence
+- expected files are generated
+
+* Temporary Directory
+
+Temporary directory with contents of example:
+
+#+begin_src python
+datadir = datadir_factory.mkdatadir(f'../_examples/Lennard_Jones_Pair')
+#+end_src
+
+Copies files to:
+
+#+begin_src bash
+ls /tmp/pytest-of-${USER}/pytest-current
+#+end_src
+
+* Assertions are Tests
+
+Tests that the example has a README:
+
+#+begin_src python
+assert (datadir / "README.org").is_file()
+#+end_src
+
+* Running Scripts
+
+Pytest will also report failures if exceptions are raised. We "test"
+that the thing ran at all.
+
+Here we:
+
+1. Change to the temporary directory
+2. run a script
+
+#+begin_src python
+      with chdir(datadir):
+
+          result = run([
+              'python',
+              'source/trivial_run.py',
+              ],
+
+          )
+#+end_src
+
+Runs it just like the user would.
+
+You can test specific things about the ~result~: 
+
+- whether it prints certain messages
+- you want it to fail
+
+* Writing new Tests
+
+Start by just copy-pasting the stuff at the top of
+~test_Lennard_Jones_Pair.py~ file.
+
+#+begin_src bash
+cd tests/test_docs/test_examples
+cp test_Lennard_Jones_Pair.py test_My_Example.py
+#+end_src
+
+Edit it:
+
+#+begin_src python
+  import os
+  import os.path as osp
+  from pathlib import Path
+
+  from pytest_shutil.cmdline import chdir
+  from pytest_shutil.run import run, run_as_main
+
+  def test_dir(datadir_factory, printer):
+
+      example = "My_Example"
+
+      datadir = datadir_factory.mkdatadir(f'../_examples/{example}')
+
+      assert (datadir / "README.org").is_file()
+      assert (datadir / "input").is_dir()
+      assert (datadir / "source").is_dir()
+
+
+  def test_wepy_example(datadir_factory, printer):
+
+      example = "My_Example"
+
+      datadir = datadir_factory.mkdatadir(f'../_examples/{example}')
+
+      with chdir(datadir):
+          run(['python',
+              'source/wepy_example.py',
+              ],
+          )
+
+      assert (datadir / "_output/lig.dcd").exists()
+#+end_src
+
+
+
+* Run that test
+
+#+begin_src bash
+cd ../../../
+pytest tests/test_docs/test_examples/test_My_Example.py
+#+end_src
+
+If its all green then you can contribute it. Then when the maintainer
+wants to check that the examples all work they only need to run:
+
+#+begin_src bash
+pytest tests/test_docs/test_examples
+#+end_src
+
+There's a bit more to the story for scripts in the README and
+environments etc.
